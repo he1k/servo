@@ -1,0 +1,21 @@
+SUCCESS SD CARD
+Listing complete file system
+[DIR] System Volume Information
+  [FILE] WPSettings.dat  SIZE: 12
+  [FILE] IndexerVolumeGuid  SIZE: 76
+[DIR] parameters
+  [FILE] param1.txt  SIZE: 0
+  [FILE] param2.txt  SIZE: 0
+  [FILE] param3.txt  SIZE: 0
+  [FILE] param4.txt  SIZE: 0
+  [FILE] param5.txt  SIZE: 0
+[DIR] logs
+  [FILE] log1.txt  SIZE: 0
+  [FILE] log2.txt  SIZE: 0
+  [FILE] log3.txt  SIZE: 0
+  [FILE] log4.txt  SIZE: 0
+  [FILE] log5.txt  SIZE: 0
+Successfully opened /logs/log1.txt
+SD card println time: 226
+snprintf time : 7
+l = 36

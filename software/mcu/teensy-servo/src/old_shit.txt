@@ -1,0 +1,7 @@
+void print_motor()
+{
+  Serial.print("ref = ");  Serial.print(ref,DIGITS); Serial.print("(rad) \t");
+  Serial.print("meas = "); Serial.print(m,DIGITS);   Serial.print("(rad)\t");
+  Serial.print("e = ");    Serial.print(e,DIGITS);   Serial.print("(rad)\t");
+  Serial.print("u = ");    Serial.print(u,DIGITS);   Serial.print("(volts)\n");
+}
