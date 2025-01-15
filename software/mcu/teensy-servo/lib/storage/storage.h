@@ -79,6 +79,16 @@ class Storage
      */
     uint32_t get_idx();
     /**
+     * Gets current buffer head
+     * \returns current buffer head
+     */
+    uint8_t get_head();
+    /**
+     * Gets current buffer tail
+     * \returns current buffer tail
+     */
+    uint8_t get_tail();
+    /**
      * Display's the contents of the buffer in an interval
      * \param idx_start floating point numbers for the current line
      * \param idx_end number of elements in A 
@@ -124,14 +134,17 @@ class Storage
      */
     bool write_line_to_file(const char* line);
     /**
-     * Writes a 512 byte buffer to the file
-     * \returns if block was written to the file
+     * Writes a 512 byte buffer to the file 
+     * \returns the amount of bytes written to the file
      * \note there is no need path provided, as this
      *       function assumes there is already a file
      *       opened for writing (curr_file) determined
-     *       by the state. The buffer is a member of the object
+     *       by the state.
+     * \note the block written to the file is the tail of the bfr
+     * 
+     *  The buffer is a member of the object
      */
-    bool write_block_to_file();
+    uint32_t write_block_to_file();
     /**
      * Reads and clears the error state
      * \returns the error

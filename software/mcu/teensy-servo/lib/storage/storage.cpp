@@ -34,15 +34,16 @@ bool Storage::empty()
 }
 void Storage::idx_inc_wrap()
 {
-  bfr_idx = bfr_idx+1 & (STORAGE::BFR_SIZE-1);
+  bfr_idx = (bfr_idx+1) & (STORAGE::BFR_SIZE-1);
 }
 bool Storage::queue_line(float *A, uint8_t n)
 {
   // Check if data fits into current block 
+  // START_BYTE + DEL_BYTE + 4*n(0) + DEL_BYTE + END_BYTE
   uint32_t n_bytes = 5 * n + 3;
   uint32_t block_offset = bfr_idx % STORAGE::BLOCK_SIZE;
   uint8_t overlap = (block_offset + n_bytes) >= STORAGE::BLOCK_SIZE - 1;
-  uint32_t bfr_idx_cur = head * STORAGE::BLOCK_SIZE + block_offset;
+  // uint32_t bfr_idx_cur = head * STORAGE::BLOCK_SIZE + block_offset;
   if(overlap and full())
   {
     Serial.println("ERR: Overlap and full");
@@ -123,6 +124,15 @@ uint32_t Storage::get_idx()
   return bfr_idx;
 }
 
+uint8_t Storage::get_head()
+{
+  return head;
+}
+
+uint8_t Storage::get_tail()
+{
+  return tail;
+}
 void Storage::display_buffer_interval(uint32_t idx_start, uint32_t idx_end)
 {
   if(idx_start < 0 || idx_end >= STORAGE::BFR_SIZE)
@@ -132,7 +142,7 @@ void Storage::display_buffer_interval(uint32_t idx_start, uint32_t idx_end)
   }else
   {
     Serial.printf("Buffer contents from %lu to %lu\n-\n",idx_start, idx_end);
-    for (uint32_t i = idx_start; i < idx_end; i++) {
+    for (uint32_t i = idx_start; i <= idx_end; i++) {
       Serial.printf("0x%02x ", bfr[i]);
       if(bfr[i] == STORAGE::LINE_END)
       {
@@ -253,23 +263,23 @@ bool Storage::write_line_to_file(const char* line)
   }
 }
 
-bool Storage::write_block_to_file()
+__UINT_LEAST32_TYPE__ Storage::write_block_to_file()
 {
   if(state == STORAGE::STATE::WRITING)
   {
     if(!empty())
     {
-      curr_file.write(bfr + tail * STORAGE::BLOCK_SIZE,STORAGE::BLOCK_SIZE);
-      if(++tail = STORAGE::N_BLOCKS) // Adjust tail
+      uint32_t n_bytes = curr_file.write(bfr + tail * STORAGE::BLOCK_SIZE,STORAGE::BLOCK_SIZE);
+      if(++tail == STORAGE::N_BLOCKS) // Adjust tail
       {
         tail = 0;
       }
-      return true;
+      return n_bytes;
     }else
     {
       Serial.println("ERR: Empty ring buffer (no full block)");
       state = STORAGE::STATE::ERROR;
-      return false;
+      return 0;
     }
   }else
   {
@@ -317,6 +327,8 @@ void Storage::list_all_files(const char* path, int depth) {
   }
 }
 
+
+// 
 void Storage::card_info()
 {
   Sd2Card card;

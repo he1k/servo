@@ -5,7 +5,7 @@
 #include "motor.h"
 #include "constants.h"
 #include "storage.h"
-
+const char* write_file = "logs/bin/log1.bin";
 Motor mot;
 Storage mem;
 IntervalTimer tim;
@@ -79,21 +79,39 @@ void setup()
   }
 
 
-  // if(mem.open_file_write("/logs/log1.txt"))
-  // {
-  //   Serial.println("Successfully opened /logs/log1.txt");
-  // }else
-  // {
-  //   Serial.println("Couldn't open /logs/log1.txt");
-  //   Serial.print("Exists? "); Serial.println(mem.file_exists("/logs/log1.txt"));
-  //   return;
-  // }
-  float A[] = {102.2342529296875f, 200.543212890625f};
-    uint8_t n = 2;
+  if(mem.open_file_write(write_file))
+  {
+    Serial.printf("Successfully opened %s\n",write_file);
+  }else
+  {
+    Serial.printf("Failed to open %s\n",write_file);
+    Serial.print("Exists? "); Serial.println(mem.file_exists(write_file));
+    return;
+  }
+  float A[3] = {0,102.2342529296875f, 200.543212890625f};
+  uint8_t n = 3;
+  for(uint32_t i = 0 ; i < 30; i++)
+  {
+    uint32_t idx = mem.get_idx();
+    A[0] = (float)i;  
     mem.queue_line(A,n);
-    mem.display_buffer_interval(0,mem.get_idx());
-    mem.queue_line(A,n);
-    mem.display_buffer_interval(0,mem.get_idx());
+    Serial.printf("------------------------------------------------------------\n");
+    Serial.printf("i = %lu, head = %u, tail = %u\n",i, mem.get_head(), mem.get_tail());
+    mem.display_buffer_interval(idx,mem.get_idx()-1);
+  }
+  Serial.printf("WHOLE BUFFER CONTENTS\n ->");
+  mem.display_buffer_interval(0,mem.get_idx()-1);
+  Serial.printf("<-\n");
+  Serial.printf("FIRST BLOCK OF BUFFER:\n->");
+  mem.display_buffer_interval(0,511);
+  Serial.printf("<-\n");
+  Serial.printf("Writing firs block to %s\n",write_file);
+  uint32_t t1 = micros();
+  uint32_t n_bytes = mem.write_block_to_file();
+  t1 = micros() - t1;
+  Serial.printf("Wrote %lu bytes to %s dt = %lu, closing file %s\n",n_bytes, write_file, t1, write_file);
+  mem.close_file();
+  
   //  const uint8_t max_n = 20;
   // volatile float A[max_n]; // Prevent compiler optimizations
   // for (uint8_t i = 0; i < max_n; i++) {
@@ -142,6 +160,7 @@ void loop()
   if(tim_flg)
   {
     tim_flg = 0;
+    /*
     if(state == STATE::ON)
     {
       //ref = 2*M_PI;//2*M_PI*sin(2.0f*M_PI*SINE_FREQ*cnt_ms*1e-3);
@@ -215,10 +234,7 @@ void loop()
         state = STATE::OFF;
       }
     }
-    // if(cnt_ms % CNT_MS_MAX == 0)
-    // {
-    //   print_motor();
-    // }
+    */
   }
 }
 
