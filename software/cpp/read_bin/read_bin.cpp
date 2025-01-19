@@ -3,7 +3,7 @@
 #include <stdlib.h>
 using namespace std;
 // CONSTANTS
-const char *file_path = "log1.bin";   // "/home/farfar/Documents/servo/software/cpp/read_bin/log1.bin";
+const char *file_path = "log4.bin";   // "/home/farfar/Documents/servo/software/cpp/read_bin/log1.bin";
 const char *file_path_cmp = "log1_serial.bin"; //"/home/farfar/Documents/servo/software/cpp/read_bin/log1.bin";
 #define PRINT_CONTENTS 0
 #define CHECK_DIFF 1
@@ -157,9 +157,30 @@ int main()
   size_t n = fread(&bfr, 1, STORAGE::BLOCK_SIZE,fp);
   printf("Read:%ld bytes from %s\n",n ,file_path);
   // Find line length:
-  int32_t line_len = find_line_length(bfr);
+  int32_t line_len = 27;//find_line_length(bfr);
   printf("Line length: %d\n",line_len);
-  parse_line(bfr,line_len);
+
+  
+  for(uint32_t i = 0; i < 17; i++)
+  {
+    for(uint32_t j = 0; j < line_len; j++)
+    {
+      printf("0x%02x ", bfr[i*line_len+j]);
+    }
+    uint8_t b[4];
+    uint32_t start_idx = 2;
+    for(uint32_t j = 0; j < 4; j++)
+    {
+      b[j] = bfr[i*line_len+start_idx];
+    }
+    int32_t cnt = (b[0] << 24) |
+                  (b[1] << 16) |
+                  (b[2] << 8)  |
+                  b[3];
+    printf("cnt = %d\n",b[0]);
+    printf("\n");
+  }
+  // parse_line(bfr,line_len);
 
   // for(uint32_t i = 0; i < STORAGE::BLOCK_SIZE; i++)
   // {

@@ -3,6 +3,7 @@ LOG_FILE_TYPE = '.log';
 LOG_FOLDER = '/home/farfar/Documents/servo/software/mcu/teensy-servo/logs/';
 LOG_PATH = strcat(LOG_FOLDER, LOG_NAME, LOG_FILE_TYPE)
 USE_OL = 1;
+run("load_params.m")
 %%
 data = load(LOG_PATH);
 t_i = 1;
@@ -20,7 +21,7 @@ else
 end
 r_log = data(:,r_i);
 e_log = data(:,e_i);
-y_log = data(:,m_i);
+y_log = data(:,y_i);
 u_log = data(:,u_i);
 cnt_log = data(:,cnt_i);
 %% Simulation settings
@@ -60,6 +61,25 @@ linkaxes([ax1 ax2], 'x');
 xlim([4 8])
 %%
 figure;
-plot(t_sim, i_sim, 'b');
+ax1 = subplot(3,1,1);
+stairs(t_sim,u_sim,'b');
+legend('$u(t)$');
 xlabel('time (s)');
-ylabel('current (A)')
+ylabel('motor voltage (V)');
+title('Simulated motor voltage input');
+ax2 = subplot(3,1,2);
+stairs(t_sim,y_sim,'g');
+legend('$y(t)$');
+xlabel('time (s)');
+ylabel('rotor angle (rad)');
+title('Simulated rotor angle');
+ax3 = subplot(3,1,3);
+plot(t_sim, i_sim, 'r');
+xlabel('time (s)');
+ylabel('winding current (A)');
+title('Simulated winding current');
+t = sgtitle('Motor model simulation');
+legend('$i(t)$')
+t.FontSize= 18;
+linkaxes([ax1 ax2 ax3], 'x');
+xlim([0 3])

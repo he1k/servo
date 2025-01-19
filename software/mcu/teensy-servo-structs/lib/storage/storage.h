@@ -3,37 +3,27 @@
 #include <Arduino.h>
 #include <SD.h>
 #include <SPI.h>
-#include <cstddef>
-//---------------------------------------------------------
-// 1) Define the macro listing all fields of MyData.
-//    - The macro takes another macro F(type, name).
-//    - For each field, we invoke F with its type and name.
-//
-//    If your struct has more fields, just add them here!
-//---------------------------------------------------------
-#define MYDATA_FIELDS(F)          \
-    F(uint32_t, time)             \
-    F(float,    u)                \
-    F(float,    y)                
-
-//---------------------------------------------------------
-// 2) Use the macro to define the struct MyData.
-//
-//    We define a temporary macro DEFINE_FIELD that takes
-//    (type, name) and expands to "type name;". Then we
-//    call MYDATA_FIELDS(DEFINE_FIELD), which expands
-//    into multiple lines of "type name;".
-//
-//    Finally, we undefine DEFINE_FIELD so we don't pollute
-//    the global macro space.
-//---------------------------------------------------------
+#include <cstddef> 
+#pragma pack(push, 1)
 struct logentry_t
 {
-#define DEFINE_FIELD(type, name) type name;
-    MYDATA_FIELDS(DEFINE_FIELD)
-#undef DEFINE_FIELD
-};
-
+  const uint8_t start = 0x02;
+  const uint8_t d1 = 0x20;
+  int32_t cnt;//float y;
+  const uint8_t d2 = 0x20;
+  float u;
+  const uint8_t d3 = 0x20;
+  uint32_t t;
+  const uint8_t d4 = 0x20;
+  float y;//int32_t cnt;
+  const uint8_t d5 = 0x20;
+  uint8_t ctrl;
+  const uint8_t d6 = 0x20;
+  uint8_t stat;
+  const uint8_t d7 = 0x20;
+  const uint8_t end = 0x03;
+}__attribute__((aligned(4)));
+#pragma pack(pop)
 namespace STORAGE
 {
   constexpr uint8_t CS_SDCARD = BUILTIN_SDCARD;
@@ -52,6 +42,15 @@ namespace STORAGE
   constexpr uint8_t LINE_START     = 0x02; // Start of text
   constexpr uint8_t DATA_SEPERATOR = 0x20; // White space
   constexpr uint8_t LINE_END       = 0x03; // End of text
+  // constexpr uint32_t STRUCT_SIZE = sizeof(logentry_t::y)+
+  //                                  sizeof(logentry_t::u)+
+  //                                  sizeof(logentry_t::t)+
+  //                                  sizeof(logentry_t::cnt)+
+  //                                  sizeof(logentry_t::ctrl)+
+  //                                  sizeof(logentry_t::stat); // Size of struct in byts
+  constexpr uint8_t STRUCT_N_ELEMENTS = 5;
+  constexpr uint32_t STRUCT_SIZE = offsetof(logentry_t, end) + sizeof(((logentry_t*)0)->end);
+
 }
 
 class Storage
@@ -66,6 +65,7 @@ class Storage
     void idx_inc_wrap();
   public:
     uint8_t bfr[STORAGE::BFR_SIZE];
+    volatile logentry_t l{};
     /**
      * Empty constructor
      */
@@ -79,8 +79,7 @@ class Storage
     // Circular buffer functions
     bool empty();
     bool full();
-
-
+    
 
 
     /**
@@ -103,6 +102,13 @@ class Storage
      * \returns true if the buffer does not overflow, otherwise false
      */
     bool queue_line(float *A, uint8_t n);
+
+    /**
+     * Inserts a line of data into the buffer
+     * \param l struct containing the data for the current log entry
+     * \returns true if the buffer does not overflow, otherwise false
+     */
+    bool queue_line_struct();
 
      /**
      * Gets current bfr idx;

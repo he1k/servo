@@ -36,6 +36,35 @@ void Storage::idx_inc_wrap()
 {
   bfr_idx = (bfr_idx+1) & (STORAGE::BFR_SIZE-1);
 }
+
+bool Storage::queue_line_struct()
+{
+  uint32_t block_offset = bfr_idx % STORAGE::BLOCK_SIZE;
+  uint8_t overlap = (block_offset + STORAGE::STRUCT_SIZE) >= STORAGE::BLOCK_SIZE - 1;
+  if(overlap and full())
+  {
+    Serial.println("ERR: Overlap and full");
+    return false;
+  }
+  uint8_t *b = (uint8_t *) &l;
+  for(uint32_t i = 0; i < STORAGE::STRUCT_SIZE; i++)
+  {
+    bfr[bfr_idx] = b[i];
+    idx_inc_wrap();
+  }
+  // Since the byte pointer has been wrapped each time, we can execute the same code
+  // regardless of overlap and which type. Lastly we adjust head pointer if overlap was detected
+  if(overlap)
+  {
+    if(++head == STORAGE::N_BLOCKS)
+    {
+      head = 0;
+    }
+  }
+  return true;
+  
+}
+
 bool Storage::queue_line(float *A, uint8_t n)
 {
   // Check if data fits into current block 
@@ -97,59 +126,26 @@ bool Storage::queue_line(float *A, uint8_t n)
   //             line_start + data + seperators + line_end
   //             (1) + (4*n) + (n+1) + (1) = 5*n+3
 
-  uint32_t bfr_idx_next = bfr_idx + 5 * n + 3;
-  if(bfr_idx_next > STORAGE::BFR_SIZE) // Too much data in buffer
-  {
-    return false;
-  }else // We can insert line into buffer
-  {
-    bfr[bfr_idx++] = STORAGE::LINE_START;       // Insert start byte
-    bfr[bfr_idx++] = STORAGE::DATA_SEPERATOR;   // Insert seperator byte
-    for(uint8_t i = 0; i < n; i++)              // Loop through the n floats
-    {
-      uint8_t *f_b = (uint8_t *)&A[i];          // Convert float to bytes
-      bfr[bfr_idx++] = f_b[0];                  // Store A[i] using little endian 
-      bfr[bfr_idx++] = f_b[1];
-      bfr[bfr_idx++] = f_b[2];
-      bfr[bfr_idx++] = f_b[3];
-      bfr[bfr_idx++] = STORAGE::DATA_SEPERATOR; // Insert seperator byte
-    }
-    bfr[bfr_idx++] = STORAGE::LINE_END;       // Insert end byte
-    return true;
-  }
-}
-
-bool Storage::queue_line(float *A, uint8_t n)
-{
-  // For each n we need 4 bytes of data
-  // Each line must start out with a line start byte
-  // Each line must end with a line end byte
-  // Between both data bytes (groups of 4) and SOL and EOL bytes there must be a seperator (white space)
-  // therefore n+1 seperator bytes are needed.
-  // The total amount of bytes for a line is:
-  //             line_start + data + seperators + line_end
-  //             (1) + (4*n) + (n+1) + (1) = 5*n+3
-
-  uint32_t bfr_idx_next = bfr_idx + 5 * n + 3;
-  if(bfr_idx_next > STORAGE::BFR_SIZE) // Too much data in buffer
-  {
-    return false;
-  }else // We can insert line into buffer
-  {
-    bfr[bfr_idx++] = STORAGE::LINE_START;       // Insert start byte
-    bfr[bfr_idx++] = STORAGE::DATA_SEPERATOR;   // Insert seperator byte
-    for(uint8_t i = 0; i < n; i++)              // Loop through the n floats
-    {
-      uint8_t *f_b = (uint8_t *)&A[i];          // Convert float to bytes
-      bfr[bfr_idx++] = f_b[0];                  // Store A[i] using little endian 
-      bfr[bfr_idx++] = f_b[1];
-      bfr[bfr_idx++] = f_b[2];
-      bfr[bfr_idx++] = f_b[3];
-      bfr[bfr_idx++] = STORAGE::DATA_SEPERATOR; // Insert seperator byte
-    }
-    bfr[bfr_idx++] = STORAGE::LINE_END;       // Insert end byte
-    return true;
-  }
+  // uint32_t bfr_idx_next = bfr_idx + 5 * n + 3;
+  // if(bfr_idx_next > STORAGE::BFR_SIZE) // Too much data in buffer
+  // {
+  //   return false;
+  // }else // We can insert line into buffer
+  // {
+  //   bfr[bfr_idx++] = STORAGE::LINE_START;       // Insert start byte
+  //   bfr[bfr_idx++] = STORAGE::DATA_SEPERATOR;   // Insert seperator byte
+  //   for(uint8_t i = 0; i < n; i++)              // Loop through the n floats
+  //   {
+  //     uint8_t *f_b = (uint8_t *)&A[i];          // Convert float to bytes
+  //     bfr[bfr_idx++] = f_b[0];                  // Store A[i] using little endian 
+  //     bfr[bfr_idx++] = f_b[1];
+  //     bfr[bfr_idx++] = f_b[2];
+  //     bfr[bfr_idx++] = f_b[3];
+  //     bfr[bfr_idx++] = STORAGE::DATA_SEPERATOR; // Insert seperator byte
+  //   }
+  //   bfr[bfr_idx++] = STORAGE::LINE_END;       // Insert end byte
+  //   return true;
+  // }
 }
 
 uint32_t Storage::get_idx()
