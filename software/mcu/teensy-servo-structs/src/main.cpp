@@ -5,7 +5,7 @@
 #include "constants.h"
 #include "motor.h"
 #include "storage.h"
-const char* write_file = "logs/bin/log4.bin";
+const char* write_file = "logs/bin/log9.bin";
 Motor mot;
 Storage mem;
 IntervalTimer tim;
@@ -23,6 +23,10 @@ volatile float A[max_n];             // Array of floats
 #define SQUARE_PERIOD 0.5
 #define SQUARE_CNT_MAX (uint32_t) (SQUARE_PERIOD/TIMER_PERIOD)
 
+int32_t uint32_to_int32(uint32_t value) {
+    const uint64_t TWO_POW_32 = 4294967296; // Use 64-bit to represent 2^32
+    return (value + INT32_MIN) % TWO_POW_32 - INT32_MIN;
+}
 
 namespace STATE
 {
@@ -86,15 +90,24 @@ void setup()
   }
 
 
-  if(mem.open_file_write(write_file))
+  if(mem.create_file(write_file))
   {
-    Serial.printf("Successfully opened %s\n",write_file);
+    Serial.printf("Createdd %s\n",write_file);
   }else
   {
-    Serial.printf("Failed to open %s\n",write_file);
-    Serial.print("Exists? "); Serial.println(mem.file_exists(write_file));
-    return;
+    if(mem.open_file_write(write_file))
+    {
+      Serial.printf("Successfully opened %s\n",write_file);
+    }else
+    {
+      Serial.printf("Failed to open %s\n",write_file);
+      Serial.print("Exists? "); Serial.println(mem.file_exists(write_file));
+      return;
   }
+  }
+  
+  //Serial.printf("Size of %s = %lu B\n",write_file, mem.get_file_size(write_file));
+
   mem.l.y = 1.5f;        //0x3FC00000
   mem.l.u = 3.125f;      //0x40480000
   mem.l.t = 0xDEADBEEF;  //0xDEADBEEF
@@ -109,7 +122,12 @@ void setup()
     // A[0] = (float)i;  
     // mem.queue_line(A,n);
     uint32_t idx = mem.get_idx();
-    mem.l.cnt = i;
+    mem.l.cnt = uint32_to_int32(i);
+    mem.l.y   = (float)i;
+    mem.l.u   = (float)(i+1);
+    mem.l.t   = millis();
+    mem.l.stat = 0x42;
+    mem.l.ctrl = 0x43;
     uint32_t t1 = micros();
     mem.queue_line_struct();
     t1 = micros() - t1;
@@ -127,7 +145,7 @@ void setup()
   uint32_t t1 = micros();
   uint32_t n_bytes = mem.write_block_to_file();
   t1 = micros() - t1;
-  Serial.printf("Wrote %lu bytes to %s dt = %lu, closing file %s\n",n_bytes, write_file, t1, write_file);
+  Serial.printf("Wrote %lu bytes to %s dt = %u, closing file %s\n",n_bytes, write_file, t1, write_file);
   mem.close_file();
   //  const uint8_t max_n = 20;
   // volatile float A[max_n]; // Prevent compiler optimizations

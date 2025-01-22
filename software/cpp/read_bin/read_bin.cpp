@@ -1,14 +1,26 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <cstring> 
 using namespace std;
 // CONSTANTS
-const char *file_path = "log4.bin";   // "/home/farfar/Documents/servo/software/cpp/read_bin/log1.bin";
+const char *file_path = "log6.bin";   // "/home/farfar/Documents/servo/software/cpp/read_bin/log1.bin";
 const char *file_path_cmp = "log1_serial.bin"; //"/home/farfar/Documents/servo/software/cpp/read_bin/log1.bin";
 #define PRINT_CONTENTS 0
 #define CHECK_DIFF 1
 #define PRINT_DIFF 2
 #define PROCESS_TYPE PRINT_CONTENTS
+struct logentry_t
+{
+  uint8_t start;
+  int32_t cnt;
+  float u;
+  uint32_t t;
+  float y;
+  uint8_t ctrl;
+  uint8_t stat;
+  uint8_t end;
+};
 namespace STORAGE
 {
   constexpr uint16_t BLOCK_SIZE = 512;
@@ -72,67 +84,71 @@ int32_t find_line_length(uint8_t *bfr)
   }
   return line_length;
 }
+uint32_t to_uint32(const uint8_t* array) {
+    return (static_cast<uint32_t>(array[0]) << 24) | // Most significant byte
+           (static_cast<uint32_t>(array[1]) << 16) |
+           (static_cast<uint32_t>(array[2]) << 8)  |
+           static_cast<uint32_t>(array[3]);         // Least significant byte
+}
+int32_t to_int32(const uint8_t* array) {
+    uint32_t unsignedResult = (static_cast<uint32_t>(array[0]) << 24) |
+                              (static_cast<uint32_t>(array[1]) << 16) |
+                              (static_cast<uint32_t>(array[2]) << 8)  |
+                              static_cast<uint32_t>(array[3]);
 
-uint8_t parse_line(uint8_t *line, int32_t line_len)
+    // Reinterpret as signed
+    return static_cast<int32_t>(unsignedResult);
+}
+void disp_entry(const struct logentry_t* entry) {
+    printf("Log Entry:\n");
+    printf("  Start: 0x%02X\n", entry->start);      // Print as hex
+    printf("  Count: %d\n", entry->cnt);           // Print as signed integer
+    printf("  U: %.6f\n", entry->u);               // Print as floating-point with precision
+    printf("  Time: %u\n", entry->t);              // Print as unsigned integer
+    printf("  Y: %.6f\n", entry->y);               // Print as floating-point with precision
+    printf("  Control: 0x%02X\n", entry->ctrl);    // Print as hex
+    printf("  Status: 0x%02X\n", entry->stat);     // Print as hex
+    printf("  End: 0x%02X\n", entry->end);         // Print as hex
+}
+/*
 {
-  if(line[0] != STORAGE::LINE_START || line[line_len - 1] != STORAGE::LINE_END)
-  {
-    printf("ERR: Missing LINE_START or LINE_END\n");
-    return 0;
-  }
-  for(uint32_t i = 0; i < line_len; i++)
-  {
-    printf("0x%02x ", line[i]);
-  }
-  printf("\n");
-  uint8_t n = (18-3)/5;
-  printf("n = %d\n",n);
-  uint8_t state = 0;
-  uint8_t b[n][4];
-  float A[n];
-  float *f;
-  uint32_t idx = 0;
-  for(uint8_t i = 0; i < n; i++)
-  {
-    for(uint8_t j = 0; j < 4; j++)
-    {
-      b[i][j] = line[2+i*4+i+j];
-    }
-    f = (float*) b[i];
-    printf("%f ",*f);
-  }
-  
+  const uint8_t start = 0x02;
+  //const uint8_t d1 = 0x20;
+  int32_t cnt;//float y;
+  //const uint8_t d2 = 0x20;
+  float u;
+  //const uint8_t d3 = 0x20;
+  uint32_t t;
+  //const uint8_t d4 = 0x20;
+  float y;//int32_t cnt;
+  //const uint8_t d5 = 0x20;
+  uint8_t ctrl;
+  //const uint8_t d6 = 0x20;
+  uint8_t stat;
+  //const uint8_t d7 = 0x20;
+  const uint8_t end = 0x03;
+}__attribute__((aligned(4)));
 
-  //A[0] = 
-  // for(uint32_t i = 0; i <= line_len; i++)
-  // {
-  //   if(state == 0)
-  //   {
-  //     if(line[i] == STORAGE::DATA_SEPERATOR)
-  //     {
-  //       state = 1;
-  //     }
-  //   }else if(state == 1)
-  //   {
-  //     if(line[i] == STORAGE::DATA_SEPERATOR)
-  //     {
-  //       // for(uint32_t j = 0; j < idx; j++)
-  //       // {
-  //       //   printf("b: 0x%02x ",b[j]);
-  //       // }
-  //       printf("\n");
-  //       f = (float*) b;
-  //       printf("%f ",*f);
-  //       state = 0;
-  //       idx = 0;
-  //     }else
-  //     {
-  //       b[idx] = line[i];  
-  //       idx++;
-  //     }
-  //   }
-  // }
-  return 1;
+*/
+#define START_OFFSET 0
+#define CNT_OFFSET 1
+#define U_OFFSET 5
+#define T_OFFSET 9
+#define Y_OFFSET 13
+#define CTRL_OFFSET 17
+#define STAT_OFFSET 18
+#define END_OFFSET 19
+
+void line_to_entry(uint8_t *line, int32_t line_len, logentry_t *l)
+{
+  memcpy(&l->start, &line[START_OFFSET], sizeof(l->start));
+  memcpy(&l->cnt,   &line[CNT_OFFSET],   sizeof(l->cnt));
+  memcpy(&l->u,     &line[U_OFFSET],     sizeof(l->u));
+  memcpy(&l->t,     &line[T_OFFSET],     sizeof(l->t));
+  memcpy(&l->y,     &line[Y_OFFSET],     sizeof(l->y));
+  memcpy(&l->ctrl,  &line[CTRL_OFFSET],  sizeof(l->ctrl));
+  memcpy(&l->stat,  &line[STAT_OFFSET],  sizeof(l->stat));
+  memcpy(&l->end,   &line[END_OFFSET],   sizeof(l->end));
 }
 
 int main()
@@ -157,29 +173,29 @@ int main()
   size_t n = fread(&bfr, 1, STORAGE::BLOCK_SIZE,fp);
   printf("Read:%ld bytes from %s\n",n ,file_path);
   // Find line length:
-  int32_t line_len = 27;//find_line_length(bfr);
+  uint32_t line_len = 20;//find_line_length(bfr);
   printf("Line length: %d\n",line_len);
 
-  
   for(uint32_t i = 0; i < 17; i++)
   {
+
+
     for(uint32_t j = 0; j < line_len; j++)
     {
       printf("0x%02x ", bfr[i*line_len+j]);
     }
-    uint8_t b[4];
-    uint32_t start_idx = 2;
-    for(uint32_t j = 0; j < 4; j++)
-    {
-      b[j] = bfr[i*line_len+start_idx];
-    }
-    int32_t cnt = (b[0] << 24) |
-                  (b[1] << 16) |
-                  (b[2] << 8)  |
-                  b[3];
-    printf("cnt = %d\n",b[0]);
     printf("\n");
   }
+  for(uint32_t i = 0; i < 20; i++)
+  {
+    logentry_t l;
+    line_to_entry(bfr+i*line_len,line_len, &l);
+    disp_entry(&l);
+    //parse_line(bfr+i*line_len,line_len);
+  }
+  // parse_line(bfr,line_len);
+  // parse_line(bfr+line_len,line_len);
+  
   // parse_line(bfr,line_len);
 
   // for(uint32_t i = 0; i < STORAGE::BLOCK_SIZE; i++)

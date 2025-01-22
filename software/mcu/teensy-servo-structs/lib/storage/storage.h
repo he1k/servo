@@ -8,19 +8,19 @@
 struct logentry_t
 {
   const uint8_t start = 0x02;
-  const uint8_t d1 = 0x20;
+  //const uint8_t d1 = 0x20;
   int32_t cnt;//float y;
-  const uint8_t d2 = 0x20;
+  //const uint8_t d2 = 0x20;
   float u;
-  const uint8_t d3 = 0x20;
+  //const uint8_t d3 = 0x20;
   uint32_t t;
-  const uint8_t d4 = 0x20;
+  //const uint8_t d4 = 0x20;
   float y;//int32_t cnt;
-  const uint8_t d5 = 0x20;
+  //const uint8_t d5 = 0x20;
   uint8_t ctrl;
-  const uint8_t d6 = 0x20;
+  //const uint8_t d6 = 0x20;
   uint8_t stat;
-  const uint8_t d7 = 0x20;
+  //const uint8_t d7 = 0x20;
   const uint8_t end = 0x03;
 }__attribute__((aligned(4)));
 #pragma pack(pop)
@@ -80,6 +80,14 @@ class Storage
     bool empty();
     bool full();
     
+    /**
+     * Prints the whole file tree
+     * \param path is the path to the file
+     * \param depth used for formatting subdirectories
+     * \returns void
+     */
+    uint64_t get_file_size(const char* path);
+
 
 
     /**
@@ -89,12 +97,6 @@ class Storage
      * \returns void
      */
     void list_all_files(const char* path, int depth = 0);
-    /**
-     * Show card information
-     * \returns void
-     */
-    void card_info();
-
     /**
      * Inserts a line of data into the buffer
      * \param A floating point numbers for the current line
@@ -192,11 +194,7 @@ class Storage
      * Closes the current file
      * \returns none
      */
-    void close_file();
-
-
-
-    
+    void close_file();    
 };
 
 

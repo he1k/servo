@@ -1,0 +1,28 @@
+void line_to_entry(uint8_t *line, int32_t line_len, logentry_t *l)
+{
+  uint8_t b[4];
+  //l->start = line[START_OFFSET];
+  memcpy(&l->start, &line[START_OFFSET], 1);
+  //memcpy(b, &line[CNT_OFFSET], 4);
+  memcpy(&l->cnt, &line[CNT_OFFSET], 4);
+  //l->cnt = *((int32_t *) (b));
+
+  //memcpy(b, &line[U_OFFSET], 4);
+  //l->u = *((float *) (b));
+  memcpy(&l->u, &line[U_OFFSET], 4);
+
+  //memcpy(b, &line[T_OFFSET], 4);
+  //l->t =  *((uint32_t *) (b));
+  memcpy(&l->t, &line[T_OFFSET], 4);
+
+  //memcpy(b, &line[Y_OFFSET], 4);
+  //l->y = *((float *) (b));
+  memcpy(&l->y, &line[Y_OFFSET], 4);
+
+  // l->ctrl = line[CTRL_OFFSET];
+  // l->stat = line[STAT_OFFSET];
+  // l->end = line[END_OFFSET];
+  memcpy(&l->ctrl, &line[CTRL_OFFSET], 1);
+  memcpy(&l->stat, &line[STAT_OFFSET], 1);
+  memcpy(&l->end, &line[END_OFFSET], 1);
+}
