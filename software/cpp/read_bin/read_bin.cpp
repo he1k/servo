@@ -4,7 +4,7 @@
 #include <cstring> 
 using namespace std;
 // CONSTANTS
-const char *file_path = "log6.bin";   // "/home/farfar/Documents/servo/software/cpp/read_bin/log1.bin";
+const char *file_path = "loglog.bin";   // "/home/farfar/Documents/servo/software/cpp/read_bin/log1.bin";
 const char *file_path_cmp = "log1_serial.bin"; //"/home/farfar/Documents/servo/software/cpp/read_bin/log1.bin";
 #define PRINT_CONTENTS 0
 #define CHECK_DIFF 1

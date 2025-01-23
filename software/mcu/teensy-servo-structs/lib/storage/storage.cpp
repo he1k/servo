@@ -1,5 +1,7 @@
 #include "storage.h"
 
+// --------------------------------------------------------------------- //
+// INIT FUNCTIONS
 // Empty constructor
 Storage::Storage()
 {
@@ -18,25 +20,61 @@ bool Storage::begin(uint8_t cs)
   head = 0;
   tail = 0;
   curr_file = nullptr;
+  f_write = nullptr;
+  f_read = nullptr;
+  state = STORAGE::STATE::IDLE;
+  err = STORAGE::ERR::NONE;
   bool sd_init = SD.sdfs.begin(SdioConfig(FIFO_SDIO));//SD.begin(cs_sd);
-  state = sd_init ? STORAGE::STATE::IDLE : STORAGE::STATE::ERROR;
   return sd_init;
 }
 
+// Returns the current value of the error field
+// clears the field at the same time
+uint8_t Storage::get_error()
+{
+  uint8_t tmp = err;
+  err = STORAGE::ERR::NONE;
+  return tmp;
+}
+// --------------------------------------------------------------------- //
+// BUFFER FUNCTIONS
+// Returns if the circular buffer is full
 bool Storage::full()
 {
   return ((head == STORAGE::N_BLOCKS - 1) && tail == 0) || ((tail - 1) == head);
 }
 
+// Returns if the circular buffer is empty
 bool Storage::empty()
 {
   return !full() && head == tail;
 }
+
+// Returns head of the circular buffer
+uint8_t Storage::get_head()
+{
+  return head;
+}
+
+// Returns tail of the circular buffer
+uint8_t Storage::get_tail()
+{
+  return tail;
+}
+
+// Increments the absolute index of the byte buffer (wraps to 0)
 void Storage::idx_inc_wrap()
 {
   bfr_idx = (bfr_idx+1) & (STORAGE::BFR_SIZE-1);
 }
 
+// Returns absolute index for the byte buffer
+uint32_t Storage::get_idx()
+{
+  return bfr_idx;
+}
+
+// Converts current log struct to bytes and inserts them into the byte buffer
 bool Storage::queue_line_struct()
 {
   uint32_t block_offset = bfr_idx % STORAGE::BLOCK_SIZE;
@@ -148,20 +186,6 @@ bool Storage::queue_line(float *A, uint8_t n)
   // }
 }
 
-uint32_t Storage::get_idx()
-{
-  return bfr_idx;
-}
-
-uint8_t Storage::get_head()
-{
-  return head;
-}
-
-uint8_t Storage::get_tail()
-{
-  return tail;
-}
 void Storage::display_buffer_interval(uint32_t idx_start, uint32_t idx_end)
 {
   if(idx_start < 0 || idx_end >= STORAGE::BFR_SIZE)
@@ -181,11 +205,14 @@ void Storage::display_buffer_interval(uint32_t idx_start, uint32_t idx_end)
     Serial.printf("-\n");
   }
 }
-uint8_t Storage::read_clear_error()
+
+// --------------------------------------------------------------------- //
+// FILE FUNCTIONS
+
+// Delete file at path
+void Storage::delete_file(const char* path)
 {
-  uint8_t err = state;
-  state = STORAGE::STATE::IDLE;
-  return err;
+  SD.remove(path);
 }
 
 // Returns true if a file at path exists, otherwise false
@@ -194,33 +221,35 @@ bool Storage::file_exists(const char* path)
   return SD.exists(path);
 }
 
-// Returns true if a file at path was created, otherwise false
-bool Storage::create_file(const char* path)
+void Storage::close_file(uint8_t write)
 {
-  // Check if other operation or error is present
-  if(state != STORAGE::STATE::IDLE)
+  if(write)
   {
-    Serial.println("ERR: Not in idle mode");
-    state = STORAGE::STATE::ERROR;
-    return false;
+    f_write.close();
+  }else{
+    f_read.close();
   }
-  // Check if file already exists
+}
+
+
+// Creates a file at the given path
+// If the file already exists, then it is deleted first
+// such as to ensure an empty file is created
+bool Storage::create_empty_file(const char* path)
+{
   if(file_exists(path))
   {
-    Serial.println("ERR: File already exists");
-    state = STORAGE::STATE::ERROR;
-    return false;
+    delete_file(path);
   }
-  // Create the file
-  curr_file = SD.open(path, FILE_WRITE);
-  if(curr_file)
+  File f = SD.open(path, FILE_WRITE);
+  f = SD.open(path, FILE_WRITE);
+  if(f)
   {
-    curr_file.close();
+    f.close();
     return true;
   }else
   {
-    Serial.println("ERR: Couldn't create file");
-    state = STORAGE::STATE::ERROR;
+    err = STORAGE::ERR::FILE_NOT_CREATED;
     return false;
   }
 }
@@ -228,145 +257,122 @@ bool Storage::create_file(const char* path)
 // Returns true if file at path was opened successfully for reading, otherwise false
 bool Storage::open_file_read(const char* path)
 {
-  // Check if other operation or error is present
-  if(state != STORAGE::STATE::IDLE)
-  {
-    Serial.println("ERR: Not in idle mode");
-    state = STORAGE::STATE::ERROR;
-    return false;
-  }
   // Check if file exists
   if(!file_exists(path))
   {
-    Serial.println("ERR: File does not exist");
-    state = STORAGE::STATE::ERROR;
+    err = STORAGE::ERR::FILE_NOT_EXIST;
     return false;
   }
-  curr_file = SD.open(path, FILE_READ);
-  if(!curr_file)
+  // Open file for reading
+  f_read = SD.open(path, FILE_READ);
+  if(!f_read) // Failed to open file
   {
-    Serial.println("ERR: Opening file for reading failed");
-    state = STORAGE::STATE::ERROR;
+    err = STORAGE::ERR::READ_FILE_NOT_OPENED;
     return false;
   }
-  state = STORAGE::STATE::READING;
   return true;
 }
 bool Storage::open_file_write(const char* path)
 {
-  // Check if other operation or error is present
-  if(state != STORAGE::STATE::IDLE)
-  {
-    Serial.println("ERR: Not in idle mode");
-    state = STORAGE::STATE::ERROR;
-    return false;
-  }
   // Check if file exists
   if(!file_exists(path))
   {
-    Serial.println("ERR: File does not exist");
-    state = STORAGE::STATE::ERROR;
+    err = STORAGE::ERR::FILE_NOT_EXIST;
     return false;
   }
-  curr_file = SD.open(path, FILE_WRITE);
-  if(!curr_file)
+  // Open file for writing
+  f_write = SD.open(path, FILE_WRITE);
+  if(!f_write) // Failed to open file
   {
-    Serial.println("ERR: Opening file for writing failed");
-    state = STORAGE::STATE::ERROR;
+    err = STORAGE::ERR::WRITE_FILE_NOT_OPENED;
     return false;
   }
-  state = STORAGE::STATE::WRITING;
   return true;
 }
 bool Storage::write_line_to_file(const char* line)
 {
-  if(state == STORAGE::STATE::WRITING)
+  if(f_write)
   {
-    curr_file.print(line);
+    f_write.print(line);
     return true;
   }else
   {
-    Serial.println("ERR: No file opened for writing");
-    state = STORAGE::STATE::ERROR;
+    err = STORAGE::ERR::WRITE_POINTER_NOT_OPEN;
     return false;
   }
 }
 
-__UINT_LEAST32_TYPE__ Storage::write_block_to_file()
+uint32_t Storage::write_block_to_file()
 {
-  if(state == STORAGE::STATE::WRITING)
+  uint32_t n_bytes = -1;
+  if(f_write)
   {
     if(!empty())
     {
-      uint32_t n_bytes = curr_file.write(bfr + tail * STORAGE::BLOCK_SIZE,STORAGE::BLOCK_SIZE);
+      n_bytes = f_write.write(bfr + tail * STORAGE::BLOCK_SIZE,STORAGE::BLOCK_SIZE);
       if(++tail == STORAGE::N_BLOCKS) // Adjust tail
       {
         tail = 0;
       }
-      return n_bytes;
-    }else
-    {
-      Serial.println("ERR: Empty ring buffer (no full block)");
-      state = STORAGE::STATE::ERROR;
-      return 0;
     }
   }else
   {
-    Serial.println("ERR: No file open");
-    state = STORAGE::STATE::ERROR;
-    return false;
+    err = STORAGE::ERR::WRITE_POINTER_NOT_OPEN;
   }
+  return n_bytes;
 }
 
-void Storage::close_file()
+int64_t Storage::get_file_size(const char* path)
 {
-  curr_file.close();
-}
-
-uint64_t Storage::get_file_size(const char* path)
-{
-  uint64_t size = -1;
-  File file = SD.open(path, FILE_READ);
-  if(file)
+  int64_t size = -1;
+  // Check if file exists
+  if(!file_exists(path))
   {
-    size = file.size();
-    file.close();
+    err = STORAGE::ERR::FILE_NOT_EXIST;
   }else
   {
-    Serial.print("COULD NOT OPEN FILE FOR CHECKING SIZE\n");
+    File f = SD.open(path, FILE_READ);
+    if(f)
+    {
+      size = f.size();
+      f.close();
+    }else
+    {
+      err = STORAGE::ERR::FILE_SIZE_NOT_OPENED;
+    }
   }
   return size;
 }
 
-void Storage::list_all_files(const char* path, int depth) {
-  File dir = SD.open(path);
-  if (!dir || !dir.isDirectory())
-  {
-    Serial.println("Not a directory or does not exist.");
-    return;
-  }
-  File file;
-  while ((file = dir.openNextFile()))
-  {
-    for (int i = 0; i < depth; i++)
-    {
-      Serial.print("  "); // Indent for subdirectories
-    }
+// void Storage::list_all_files(const char* path, int depth) {
+//   File dir = SD.open(path);
+//   if (!dir || !dir.isDirectory())
+//   {
+//     Serial.println("Not a directory or does not exist.");
+//     return;
+//   }
+//   File file;
+//   while ((file = dir.openNextFile()))
+//   {
+//     for (int i = 0; i < depth; i++)
+//     {
+//       Serial.print("  "); // Indent for subdirectories
+//     }
 
-    if (file.isDirectory())
-    {
-      Serial.print("[DIR] ");
-      Serial.println(file.name());
-      // Recursive call to list files in the subdirectory
-      list_all_files(file.name(), depth + 1);
-    }
-    else
-    {
-      Serial.print("[FILE] ");
-      Serial.print(file.name());
-      Serial.print("  SIZE: ");
-      Serial.println(file.size());
-    }
-    file.close();
-  }
-}
+//     if (file.isDirectory())
+//     {
+//       Serial.print("[DIR] ");
+//       Serial.println(file.name());
+//       // Recursive call to list files in the subdirectory
+//       list_all_files(file.name(), depth + 1);
+//     }
+//     else
+//     {
+//       Serial.print("[FILE] ");
+//       Serial.print(file.name());
+//       Serial.print("  SIZE: ");
+//       Serial.println(file.size());
+//     }
+//     file.close();
+//   }
+// }

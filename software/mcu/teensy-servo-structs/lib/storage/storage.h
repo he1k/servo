@@ -39,6 +39,16 @@ namespace STORAGE
     constexpr uint8_t WRITING = 2; // Writing file
     constexpr uint8_t ERROR = 3;   // Error
   }
+  namespace ERR
+  {
+    constexpr uint8_t NONE = 0;
+    constexpr uint8_t FILE_NOT_CREATED = 1;
+    constexpr uint8_t FILE_NOT_EXIST = 2;
+    constexpr uint8_t READ_FILE_NOT_OPENED = 3;
+    constexpr uint8_t WRITE_FILE_NOT_OPENED = 4;
+    constexpr uint8_t FILE_SIZE_NOT_OPENED = 5;
+    constexpr uint8_t WRITE_POINTER_NOT_OPEN = 6;
+  }
   constexpr uint8_t LINE_START     = 0x02; // Start of text
   constexpr uint8_t DATA_SEPERATOR = 0x20; // White space
   constexpr uint8_t LINE_END       = 0x03; // End of text
@@ -59,9 +69,12 @@ class Storage
     uint8_t cs_sd; // CS for SD card reader
     uint32_t bfr_idx;
     uint8_t state;
+    uint8_t err;
     uint8_t head;       // Circular buffer head pointer
     uint8_t tail;       // Circular buffer tail pointer
     File curr_file;     // Current file
+    File f_read;
+    File f_write;
     void idx_inc_wrap();
   public:
     uint8_t bfr[STORAGE::BFR_SIZE];
@@ -79,24 +92,27 @@ class Storage
     // Circular buffer functions
     bool empty();
     bool full();
+    uint32_t get_idx();
+    uint8_t get_head();
+    uint8_t get_tail();
     
     /**
-     * Prints the whole file tree
+     * Returns the file size at path in bytes
      * \param path is the path to the file
-     * \param depth used for formatting subdirectories
-     * \returns void
+     * \returns file size in bytes (-1 if error)
      */
-    uint64_t get_file_size(const char* path);
+    int64_t get_file_size(const char* path);
 
 
 
-    /**
-     * Prints the whole file tree
-     * \param path is the path to the file
-     * \param depth used for formatting subdirectories
-     * \returns void
-     */
-    void list_all_files(const char* path, int depth = 0);
+    // /**
+    //  * Prints the whole file tree
+    //  * \param path is the path to the file
+    //  * \param depth used for formatting subdirectories
+    //  * \returns void
+    //  */
+    // void list_all_files(const char* path, int depth = 0);
+
     /**
      * Inserts a line of data into the buffer
      * \param A floating point numbers for the current line
@@ -107,26 +123,10 @@ class Storage
 
     /**
      * Inserts a line of data into the buffer
-     * \param l struct containing the data for the current log entry
      * \returns true if the buffer does not overflow, otherwise false
      */
     bool queue_line_struct();
 
-     /**
-     * Gets current bfr idx;
-     * \returns current buffer index
-     */
-    uint32_t get_idx();
-    /**
-     * Gets current buffer head
-     * \returns current buffer head
-     */
-    uint8_t get_head();
-    /**
-     * Gets current buffer tail
-     * \returns current buffer tail
-     */
-    uint8_t get_tail();
     /**
      * Display's the contents of the buffer in an interval
      * \param idx_start floating point numbers for the current line
@@ -142,12 +142,19 @@ class Storage
      */
     bool file_exists(const char* path);
     /**
-     * Create a new file with path
+     * Create an empty file at path
      * \param path is the path to the file
      * \returns if the file was created
-     * \note can return false due to multiple reasons
+     * \note any file present at the path is deleted
+     *       such as to create an empty file
      */
-    bool create_file(const char* path);
+    bool create_empty_file(const char* path);
+    /**
+     * Deletes file at path
+     * \param path is the path to the file
+     * \returns nothing
+     */
+    void delete_file(const char* path);
     /**
      * Open file at path for reading only
      * \param path is the path to the file
@@ -185,16 +192,17 @@ class Storage
      */
     uint32_t write_block_to_file();
     /**
-     * Reads and clears the error state
+     * Reads and clear the error field
      * \returns the error
-     * \note this sets the state to idle again
+     * \note resets error field
      */
-    uint8_t read_clear_error();
+    uint8_t get_error();
     /**
-     * Closes the current file
+     * Closes either the read or write file
+     * \param write if 1 the function acts on the write file pointer
      * \returns none
      */
-    void close_file();    
+    void close_file(uint8_t write); 
 };
 
 

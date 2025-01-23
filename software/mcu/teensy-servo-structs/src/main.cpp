@@ -5,12 +5,20 @@
 #include "constants.h"
 #include "motor.h"
 #include "storage.h"
-const char* write_file = "logs/bin/log9.bin";
-Motor mot;
+#include "state.h"
+
+const char* write_file = "/write/bin/log1.bin";
+const char* read_file = "/read/parameters/gains.txt";
+
+// Motor object
+Motor mot; 
+// Memory object
 Storage mem;
+// State object
+State sta;
+// Timer object
 IntervalTimer tim;
-const uint8_t max_n = 20;   // Maximum number of floats
-volatile float A[max_n];             // Array of floats
+
 #define SINE_FREQ 0.25f
 #define KP 2.5
 #define DIGITS 5
@@ -23,17 +31,13 @@ volatile float A[max_n];             // Array of floats
 #define SQUARE_PERIOD 0.5
 #define SQUARE_CNT_MAX (uint32_t) (SQUARE_PERIOD/TIMER_PERIOD)
 
-int32_t uint32_to_int32(uint32_t value) {
-    const uint64_t TWO_POW_32 = 4294967296; // Use 64-bit to represent 2^32
-    return (value + INT32_MIN) % TWO_POW_32 - INT32_MIN;
-}
-
-namespace STATE
-{
-  constexpr uint8_t OFF = 0;
-  constexpr uint8_t ON = 1;
-  constexpr uint8_t TX_LOG = 2;
-}
+// namespace STATE
+// {
+//   constexpr uint8_t IDLE   = 0;
+//   constexpr uint8_t OFF    = 1;
+//   constexpr uint8_t ON     = 2;
+//   constexpr uint8_t TX_LOG = 3;
+// }
 
 
 volatile uint8_t tim_flg = 0;
@@ -43,7 +47,7 @@ volatile float m = 0;
 volatile float u = 1;
 volatile uint32_t t = 0;
 volatile int32_t cnt_enc = 0;
-uint8_t state = STATE::OFF;
+//uint8_t state = STATE::OFF;
 uint32_t cnt_ms = 0;
 File myFile;
 
@@ -57,28 +61,10 @@ void setup()
 {
   Serial.begin(COMM::BAUD_RATE);
   while(!Serial){};
-  /*
-  logentry_t lent;
-  lent.y = 1.5f;        //0x3FC00000
-  lent.u = 3.125f;      //0x40480000
-  lent.t = 0xDEADBEEF;  //0xDEADBEEF
-  lent.cnt = 0xF8000000;//0xF8000000
-  lent.ctrl = 0x0A;     //0x0A
-  lent.stat = 0x0B;    //0x0B
-  uint8_t *b = (uint8_t *) (&lent);
-  Serial.printf("lent size = %lu\n",sizeof(lent));
-  Serial.printf("logentry_t size = %lu\n",sizeof(logentry_t));
-  Serial.printf("logentry_t size mem = %lu\n",STORAGE::STRUCT_SIZE);
-  for (uint32_t i = 0; i < sizeof(lent); i++) 
-  {
-      Serial.printf("%02x ", b[i]);
-  }
-  */
-
   mot.begin();
-  mot.write_voltage(0);
+  sta.begin();
   cnt_ms = 0;
-  state = STATE::OFF;
+  //state = STATE::OFF;
   delay(2000);
   if(!mem.begin(STORAGE::CS_SDCARD))
   {
@@ -88,25 +74,39 @@ void setup()
   {
     Serial.println("SUCCESS SD CARD");
   }
-
-
-  if(mem.create_file(write_file))
+  delay(2000);
+  int64_t f_size = mem.get_file_size(write_file);
+  uint8_t e = mem.get_error();
+  Serial.print("Size of file: "); Serial.print(f_size); Serial.print("\t e= "); Serial.println(e);
+  //Serial.printf("Size of %s = %ld B, e = %u\n",write_file, f_size, e);
+  bool o = mem.create_empty_file(write_file);
+  Serial.printf("o = %u, err = %u\n",o,mem.get_error());
+  o = mem.open_file_write(write_file);
+  Serial.printf("o = %u, err = %u\n",o,mem.get_error());
+  f_size = mem.get_file_size(write_file);
+  e = mem.get_error();
+  Serial.print("Size of file: "); Serial.print(f_size); Serial.print("\t e= "); Serial.println(e);
+  //Serial.printf("Size of %s = %d B, e = %u\n",write_file, f_size, e);
+  if(!o)
   {
-    Serial.printf("Createdd %s\n",write_file);
-  }else
-  {
-    if(mem.open_file_write(write_file))
-    {
-      Serial.printf("Successfully opened %s\n",write_file);
-    }else
-    {
-      Serial.printf("Failed to open %s\n",write_file);
-      Serial.print("Exists? "); Serial.println(mem.file_exists(write_file));
-      return;
+    while(1){};
   }
-  }
-  
-  //Serial.printf("Size of %s = %lu B\n",write_file, mem.get_file_size(write_file));
+
+  // if(mem.create_file(write_file))
+  // {
+  //   Serial.printf("Createdd %s\n",write_file);
+  // }else
+  // {
+  //   if(mem.open_file_write(write_file))
+  //   {
+  //     Serial.printf("Successfully opened %s\n",write_file);
+  //   }else
+  //   {
+  //     Serial.printf("Failed to open %s\n",write_file);
+  //     Serial.print("Exists? "); Serial.println(mem.file_exists(write_file));
+  //     return;
+  // }
+  // }
 
   mem.l.y = 1.5f;        //0x3FC00000
   mem.l.u = 3.125f;      //0x40480000
@@ -122,7 +122,7 @@ void setup()
     // A[0] = (float)i;  
     // mem.queue_line(A,n);
     uint32_t idx = mem.get_idx();
-    mem.l.cnt = uint32_to_int32(i);
+    mem.l.cnt = (int32_t)i;
     mem.l.y   = (float)i;
     mem.l.u   = (float)(i+1);
     mem.l.t   = millis();
@@ -146,7 +146,7 @@ void setup()
   uint32_t n_bytes = mem.write_block_to_file();
   t1 = micros() - t1;
   Serial.printf("Wrote %lu bytes to %s dt = %u, closing file %s\n",n_bytes, write_file, t1, write_file);
-  mem.close_file();
+  mem.close_file(1);
   //  const uint8_t max_n = 20;
   // volatile float A[max_n]; // Prevent compiler optimizations
   // for (uint8_t i = 0; i < max_n; i++) {
@@ -190,11 +190,24 @@ void setup()
 
   tim.begin(tim_isr, TIMER_PERIOD*1e6);
 }
+
 void loop()
 {
   if(tim_flg)
   {
     tim_flg = 0;
+    uint8_t cmd = STATE::CMD::NONE;
+    if(Serial.available() > 1)
+    {
+      uint8_t b1 = Serial.read();
+      uint8_t b2 = Serial.read();
+      if(b2 == STATE::CMD::LINE_FEED)
+      {
+        cmd = b1;
+      }  
+    }
+    sta.update(cmd);
+    
     /*
     if(state == STATE::ON)
     {
@@ -272,4 +285,88 @@ void loop()
     */
   }
 }
+
+
+// void loop()
+// {
+//   if(tim_flg)
+//   {
+//     tim_flg = 0;
+//     /*
+//     if(state == STATE::ON)
+//     {
+//       //ref = 2*M_PI;//2*M_PI*sin(2.0f*M_PI*SINE_FREQ*cnt_ms*1e-3);
+//       if(cnt_ms < SQUARE_CNT_MAX)
+//       {
+//         ref = 0;
+//       }else if(cnt_ms == SQUARE_CNT_MAX)
+//       {
+//         ref = SQUARE_AMPLITUDE;
+//       }else if(cnt_ms % SQUARE_CNT_MAX == 0)
+//       {
+//         ref = -1*ref;
+//       }
+//       m = mot.read_position();
+//       e = ref-m;
+//       u = KP*e;
+//       mot.write_voltage(u);
+//       if(cnt_ms < N_SAMPLES)
+//       {
+//         data_log[cnt_ms].t = micros();
+//         data_log[cnt_ms].r = ref;
+//         data_log[cnt_ms].e = e;
+//         data_log[cnt_ms].m = m;
+//         data_log[cnt_ms].u = mot.read_voltage();
+//         data_log[cnt_ms].cnt = mot.read_count();
+//         cnt_ms++;
+//       }else
+//       {
+//         state = STATE::OFF;
+//         //Serial.println("Test done");
+//       }
+//     }else if(state == STATE::OFF)
+//     {
+//       cnt_ms = 0;
+//       mot.clear();
+//       ref = SQUARE_AMPLITUDE;
+//       if(Serial.available() > 1)
+//       {
+//         uint8_t b1 = Serial.read();
+//         uint8_t b2 = Serial.read();
+//         if(b2 != (uint8_t) '\n')
+//         {
+//           //Serial.println("Missing LF");
+//         }else
+//         {
+//           if(b1 == (uint8_t) 'S')
+//           {
+//             //Serial.println("Starting test");
+//             state = STATE::ON;
+//           }else if(b1 == (uint8_t) 'L')
+//           {
+//             //Serial.println("Dumping log");
+//             state = STATE::TX_LOG;
+//           }
+//         }
+//       }
+//     }else if(state == STATE::TX_LOG)
+//     {
+//       if(cnt_ms < N_SAMPLES)
+//       {
+//         Serial.print(data_log[cnt_ms].t); Serial.print("\t");
+//         Serial.print(data_log[cnt_ms].r ,DIGITS); Serial.print("\t");
+//         Serial.print(data_log[cnt_ms].e ,DIGITS); Serial.print("\t");
+//         Serial.print(data_log[cnt_ms].m ,DIGITS); Serial.print("\t");
+//         Serial.print(data_log[cnt_ms].u ,DIGITS); Serial.print("\t");
+//         Serial.print(data_log[cnt_ms].cnt);
+//         Serial.print("\n");
+//         cnt_ms++;
+//       }else
+//       {
+//         state = STATE::OFF;
+//       }
+//     }
+//     */
+//   }
+// }
 

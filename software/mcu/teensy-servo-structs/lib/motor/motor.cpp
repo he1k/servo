@@ -18,6 +18,7 @@ void Motor::begin()
   digitalWriteFast(MOTOR::DIR_PIN, LOW);
   analogWriteFrequency(MOTOR::PWM_PIN,MOTOR::PWM_FREQ);
   analogWriteResolution(MOTOR::PWM_RES);
+  analogWrite(MOTOR::PWM_PIN, MOTOR::PWM_MIN);
   mot_vol = 0.0f;
   mot_pos = 0.0f;
   mot_vel = 0.0f;
