@@ -8,6 +8,7 @@
 #include "state.h"
 
 const char* write_file = "/write/bin/log1.bin";
+const uint64_t f_prealloc = 40*1024*1024; // 40 MB preallocate
 const char* read_file = "/read/parameters/gains.txt";
 
 // Motor object
@@ -75,134 +76,22 @@ void setup()
     Serial.println("SUCCESS SD CARD");
   }
   delay(2000);
-  int64_t f_size = mem.get_file_size(write_file);
-  uint8_t e = mem.get_error();
-  Serial.print("Size of file: "); Serial.print(f_size); Serial.print("\t e= "); Serial.println(e);
+  // int64_t f_size = mem.get_file_size(write_file);
+  // uint8_t e = mem.get_error();
+  // Serial.print("Size of file: "); Serial.print(f_size); Serial.print("\t e= "); Serial.println(e);
   //Serial.printf("Size of %s = %ld B, e = %u\n",write_file, f_size, e);
-  bool o = mem.create_empty_file(write_file);
-  Serial.printf("o = %u, err = %u\n",o,mem.get_error());
+  bool o = mem.create_empty_file(write_file,f_prealloc);
+  Serial.print("create_empty_file = "); Serial.print(o); Serial.print("\t e = "); Serial.println(mem.get_error());
   o = mem.open_file_write(write_file);
-  Serial.printf("o = %u, err = %u\n",o,mem.get_error());
-  f_size = mem.get_file_size(write_file);
-  e = mem.get_error();
+  Serial.print("open_file_write = "); Serial.print(o); Serial.print("\t e = "); Serial.println(mem.get_error());
+  int64_t f_size = mem.get_file_size(write_file);
+  uint8_t er = mem.get_error();
   Serial.print("Size of file: "); Serial.print(f_size); Serial.print("\t e= "); Serial.println(e);
   //Serial.printf("Size of %s = %d B, e = %u\n",write_file, f_size, e);
   if(!o)
   {
     while(1){};
   }
-
-  // if(mem.create_file(write_file))
-  // {
-  //   Serial.printf("Createdd %s\n",write_file);
-  // }else
-  // {
-  //   if(mem.open_file_write(write_file))
-  //   {
-  //     Serial.printf("Successfully opened %s\n",write_file);
-  //   }else
-  //   {
-  //     Serial.printf("Failed to open %s\n",write_file);
-  //     Serial.print("Exists? "); Serial.println(mem.file_exists(write_file));
-  //     return;
-  // }
-  // }
-  // uint32_t t;
-  // float u;
-  // float y;
-  // float r;
-  // float e;
-  // uint8_t ctrl;
-  // uint8_t state;
-  // mem.l.t = 0;
-  // mem.l.y = 0.0f;        //0x3FC00000
-  // mem.l.u = 0.0f;      //0x40480000
-  // mem.l.r = 0.0f;
-  // mem.l.e = 0.0f;
-  // mem.l.ctrl = 0x0A;     //0x0A
-  // mem.l.state = 0x0B;    //0x0B
-  // // float A[3] = {0,102.2342529296875f, 200.543212890625f};
-  // // uint8_t n = 3;
-  // for(uint32_t i = 0 ; i < 30; i++)
-  // {
-  //   // uint32_t idx = mem.get_idx();
-  //   // A[0] = (float)i;  
-  //   // mem.queue_line(A,n);
-  //   uint32_t idx = mem.get_idx();
-  //   // mem.l.cnt = (int32_t)i;
-  //   // mem.l.y   = (float)i;
-  //   // mem.l.u   = (float)(i+1);
-  //   // mem.l.t   = millis();
-  //   // mem.l.stat = 0x42;
-  //   // mem.l.ctrl = 0x43;
-
-  //   mem.l.t = millis();
-  //   mem.l.y = (float)i;        //0x3FC00000
-  //   mem.l.u = (float)(i+1);      //0x40480000
-  //   mem.l.r = (float)(i+2);
-  //   mem.l.e = (float)(i+3);
-  //   mem.l.ctrl = 0x0A;     //0x0A
-  //   mem.l.state = 0x0B;    //0x0B
-  //   uint32_t t1 = micros();
-  //   mem.queue_line_struct();
-  //   t1 = micros() - t1;
-  //   Serial.printf("------------------------------------------------------------\n");
-  //   Serial.printf("dt = %lu.i = %lu, head = %u, tail = %u\n",t1,i, mem.get_head(), mem.get_tail());
-  //   mem.display_buffer_interval(idx,mem.get_idx()-1);
-  // }
-  // Serial.printf("WHOLE BUFFER CONTENTS\n ->");
-  // mem.display_buffer_interval(0,mem.get_idx()-1);
-  // Serial.printf("<-\n");
-  // Serial.printf("FIRST BLOCK OF BUFFER:\n->");
-  // mem.display_buffer_interval(0,511);
-  // Serial.printf("<-\n");
-  // Serial.printf("Writing firs block to %s\n",write_file);
-  // uint32_t t1 = micros();
-  // uint32_t n_bytes = mem.write_block_to_file();
-  // t1 = micros() - t1;
-  // Serial.printf("Wrote %lu bytes to %s dt = %u, closing file %s\n",n_bytes, write_file, t1, write_file);
-  // mem.close_file(1);
-  //  const uint8_t max_n = 20;
-  // volatile float A[max_n]; // Prevent compiler optimizations
-  // for (uint8_t i = 0; i < max_n; i++) {
-  //     A[i] = random(0, 100) * 0.1f; // Populate with random float values
-  // }
-
-  //   for (uint8_t n = 1; n <= max_n; n++) {
-  //       unsigned long start_time = micros();
-  //       mem.queue_line((float *)A, n);
-  //       unsigned long end_time = micros();
-
-  //       unsigned long elapsed_time = end_time - start_time;
-
-  //       Serial.print("n = ");
-  //       Serial.print(n);
-  //       Serial.print(", Execution time: ");
-  //       Serial.print(elapsed_time);
-  //       Serial.println(" us");
-
-  //       // Access buffer to prevent optimization
-  //       Serial.print("First byte in buffer: ");
-  //       Serial.println(mem.bfr[0]);
-  //       mem.display_buffer_interval(mem.get_idx())
-  //   }
-
-
-  // mem.card_info();
-  // uint32_t t1 = micros();
-  // uint32_t t2 = micros();
-  // int l = snprintf((char*)mem.bfr, STORAGE::BFR_SIZE, "%lu\t%.5f\t%.5f\t%.5f\t%.5f\t%ld\n",t ,ref, e, m, u, cnt_enc);
-  // t2 = micros()-t2;
-  // mem.write_block_to_file();//((char*)mem.bfr);
-  // t1 = micros() - t1;
-  // Serial.print("SD card println time: "); Serial.println(t1);
-  // Serial.print("snprintf time : "); Serial.println(t2);
-  // Serial.print("l = "); Serial.println(l);
-  // Serial.print("bfr(l) = "); Serial.print(mem.bfr[l]);
-  // Serial.print("bfr(l-1) = "); Serial.print(mem.bfr[l-1]);
-  // mem.close_file();
-
-
   tim.begin(tim_isr, TIMER_PERIOD*1e6);
 }
 
@@ -254,13 +143,14 @@ void loop()
         mem.l.u = mot.read_voltage();
         mem.l.r = ref;
         mem.l.e = e;
-        mem.l.ctrl = 0x0A;    
-        mem.l.state = 0x0B;    
+        mem.l.ctrl = mem.get_head();   
+        mem.l.state = mem.get_tail();    
         mem.queue_line_struct();
         if(!mem.empty())
         {
           //uint32_t t1 = micros();
-          //uint32_t n_bytes = mem.write_block_to_file();
+          // uint32_t n_bytes = 
+          mem.write_block_to_file();
           //t1 = micros() - t1;
           //Serial.print("n_bytes = "); Serial.print(n_bytes); Serial.print("\t dt ="); Serial.print(t1); Serial.print("\t");
           //Serial.print("head = "); Serial.print(mem.get_head()); Serial.print("\t tail = "); Serial.println(mem.get_tail());

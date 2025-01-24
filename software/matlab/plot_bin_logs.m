@@ -2,7 +2,7 @@ clear all;
 clc;
 close all;
 logs_path = '/home/farfar/Documents/servo/software/matlab/logs/';
-log_name = 'log3.bin';
+log_name = 'log5.bin';
 log_path = strcat(logs_path,log_name)
 fp = fopen(log_path);
 if (fp == -1)
@@ -46,8 +46,10 @@ for i = 1:n
     dat.state(i) = data((i-1)*line_len+23);
     dat.end(i)   = data((i-1)*line_len+24);
 end
-%%
+dat.head = dat.ctrl;
+dat.tail = dat.state;
 t = (dat.t-dat.t(1))*1e-6;
+%%
 figure;
 subplot(3,1,1);
 plot(t,dat.u,'b');

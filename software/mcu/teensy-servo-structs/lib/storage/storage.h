@@ -89,6 +89,7 @@ class Storage
     uint32_t get_idx();
     uint8_t get_head();
     uint8_t get_tail();
+    bool block_ready();
     
     /**
      * Returns the file size at path in bytes
@@ -138,11 +139,12 @@ class Storage
     /**
      * Create an empty file at path
      * \param path is the path to the file
+     * \param f_size bytes to pre allocate
      * \returns if the file was created
      * \note any file present at the path is deleted
      *       such as to create an empty file
      */
-    bool create_empty_file(const char* path);
+    bool create_empty_file(const char* path,  uint64_t f_size);
     /**
      * Deletes file at path
      * \param path is the path to the file

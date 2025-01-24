@@ -39,15 +39,29 @@ uint8_t Storage::get_error()
 // --------------------------------------------------------------------- //
 // BUFFER FUNCTIONS
 // Returns if the circular buffer is full
+
 bool Storage::full()
 {
-  return ((head == STORAGE::N_BLOCKS - 1) && tail == 0) || ((tail - 1) == head);
+  return ((head == STORAGE::N_BLOCKS - 1) && tail == 0) || ( (tail > head ) && (tail - head == 1));
+  // if((head == STORAGE::N_BLOCKS - 1) && tail == 0)
+  // {
+  //   return true;
+  // }
+  // if(tail > head)
+  // {
+  //   if(tail - head == 1)
+  //   {
+  //     return true;
+  //   }
+  // }
+
+  // return false;
 }
 
 // Returns if the circular buffer is empty
 bool Storage::empty()
 {
-  return !full() && head == tail;
+  return head == tail;
 }
 
 // Returns head of the circular buffer
@@ -235,16 +249,17 @@ void Storage::close_file(uint8_t write)
 // Creates a file at the given path
 // If the file already exists, then it is deleted first
 // such as to ensure an empty file is created
-bool Storage::create_empty_file(const char* path)
+bool Storage::create_empty_file(const char* path, uint64_t f_size)
 {
   if(file_exists(path))
   {
+    Serial.println("File exist");
     delete_file(path);
   }
-  File f = SD.open(path, FILE_WRITE);
-  f = SD.open(path, FILE_WRITE);
+  FsFile f = SD.sdfs.open(path, FILE_WRITE);
   if(f)
   {
+    f.preAllocate(f_size);
     f.close();
     return true;
   }else
