@@ -1,0 +1,4 @@
+SUCCESS SD CARD
+create_empty_file = 0	 e = 1
+open_file_write = 0	 e = 2
+Size of file: -1	 e= 2

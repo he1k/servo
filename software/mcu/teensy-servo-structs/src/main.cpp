@@ -8,7 +8,7 @@
 #include "state.h"
 
 const char* write_file = "/write/bin/log1.bin";
-const uint64_t f_prealloc = 40*1024*1024; // 40 MB preallocate
+const uint64_t f_prealloc = 5*1024*1024; // 40 MB preallocate
 const char* read_file = "/read/parameters/gains.txt";
 
 // Motor object
@@ -84,9 +84,7 @@ void setup()
   Serial.print("create_empty_file = "); Serial.print(o); Serial.print("\t e = "); Serial.println(mem.get_error());
   o = mem.open_file_write(write_file);
   Serial.print("open_file_write = "); Serial.print(o); Serial.print("\t e = "); Serial.println(mem.get_error());
-  int64_t f_size = mem.get_file_size(write_file);
-  uint8_t er = mem.get_error();
-  Serial.print("Size of file: "); Serial.print(f_size); Serial.print("\t e= "); Serial.println(e);
+  Serial.print("Size of file: "); Serial.print(mem.get_file_size(write_file)); Serial.print("\t e= "); Serial.println(mem.get_error());
   //Serial.printf("Size of %s = %d B, e = %u\n",write_file, f_size, e);
   if(!o)
   {

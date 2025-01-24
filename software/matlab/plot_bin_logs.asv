@@ -71,41 +71,38 @@ linkaxes([ax1 ax2 ax3], 'x')
 sgtitle('Log data')
 set(gcf, 'Position',  [100, 100, 1600, 800]);
 %% Simulate model with log data
-mdl = 'motor_block.slx';
+mdl = 'motor_block';
 run('load_params.m')
 SIM_TIME = log.t(end);
-USE_OL = 0;
+USE_OL = 1;
 u_sim_in = [log.t',log.u'];
 r_sim_in = [log.t',log.r'];
-simu = sim(mdl);
-simu.t = (0:1e-3:SIM_TIME)';
+sim(mdl)
+t_sim = 0:1e-3:SIM_TIME;
 %% Plot and compare
-figure('Name','Sim and log data');
+figure('Name','Log data');
 ax1 = subplot(3,1,1);
-stairs(log.t,log.u,'b'); hold on;
-stairs(simu.t,simu.u,'--r'); hold on;
-legend('$u(t)$-log','$u(t)$-sim');
+stairs(log.t,log.u,'b');
+legend('$u(t)$');
 xlabel('time (s)');
 ylabel('voltage (V)');
 grid on;
 
 ax2= subplot(3,1,2);
-stairs(log.t,log.y,'g'); hold on;
-stairs(simu.t,simu.y,'--b'); hold on;
-legend('$y(t)$-log','$y(t)$-sim');
+stairs(log.t,log.y,'g');
+legend('$y(t)$');
 xlabel('time (s)');
 ylabel('angle (rad)');
 grid on;
 
 ax3 = subplot(3,1,3);
 stairs(log.t,log.y,'g'); hold on;
-stairs(simu.t,simu.y,'--b'); hold on;
 stairs(log.t, log.r, '--r');
-legend('$y(t)$-log','$y(t)$-sim','$r(t)$');
+legend('$y(t)$','$r(t)$');
 xlabel('time (s)');
 ylabel('angle (rad)');
 grid on;
 
 linkaxes([ax1 ax2 ax3], 'x')
-sgtitle('Sim and log data')
+sgtitle('Log data')
 set(gcf, 'Position',  [100, 100, 1600, 800]);

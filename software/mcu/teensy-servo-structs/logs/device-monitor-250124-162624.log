@@ -1,0 +1,5 @@
+SUCCESS SD CARD
+File exist
+create_empty_file = 1	 e = 0
+open_file_write = 1	 e = 0
+Size of file: 5242880	 e= 0

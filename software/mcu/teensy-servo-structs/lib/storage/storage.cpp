@@ -19,9 +19,9 @@ bool Storage::begin(uint8_t cs)
   bfr_idx = 0;
   head = 0;
   tail = 0;
-  curr_file = nullptr;
   f_write = nullptr;
   f_read = nullptr;
+  f_write_size = 0;
   state = STORAGE::STATE::IDLE;
   err = STORAGE::ERR::NONE;
   bool sd_init = SD.sdfs.begin(SdioConfig(FIFO_SDIO));//SD.begin(cs_sd);
@@ -239,7 +239,9 @@ void Storage::close_file(uint8_t write)
 {
   if(write)
   {
+    f_write.truncate(f_write_size);
     f_write.close();
+    f_write_size = 0;
   }else{
     f_read.close();
   }
@@ -256,9 +258,13 @@ bool Storage::create_empty_file(const char* path, uint64_t f_size)
     Serial.println("File exist");
     delete_file(path);
   }
-  FsFile f = SD.sdfs.open(path, FILE_WRITE);
+  FsFile f = SD.sdfs.open(path, O_WRITE | O_CREAT);
   if(f)
   {
+    if(f.fileSize() > 0)
+    {
+      f.truncate();
+    }
     f.preAllocate(f_size);
     f.close();
     return true;
@@ -296,12 +302,13 @@ bool Storage::open_file_write(const char* path)
     return false;
   }
   // Open file for writing
-  f_write = SD.open(path, FILE_WRITE);
+  f_write = SD.open(path, FILE_WRITE_BEGIN);
   if(!f_write) // Failed to open file
   {
     err = STORAGE::ERR::WRITE_FILE_NOT_OPENED;
     return false;
   }
+  f_write_size = 0;
   return true;
 }
 bool Storage::write_line_to_file(const char* line)
@@ -329,6 +336,7 @@ uint32_t Storage::write_block_to_file()
       {
         tail = 0;
       }
+      f_write_size += STORAGE::BLOCK_SIZE;
     }
   }else
   {

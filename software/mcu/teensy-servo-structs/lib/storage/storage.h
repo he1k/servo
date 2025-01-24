@@ -66,9 +66,9 @@ class Storage
     uint8_t err;
     uint8_t head;       // Circular buffer head pointer
     uint8_t tail;       // Circular buffer tail pointer
-    File curr_file;     // Current file
     File f_read;
     File f_write;
+    uint64_t f_write_size;
     void idx_inc_wrap();
   public:
     uint8_t bfr[STORAGE::BFR_SIZE];

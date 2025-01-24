@@ -33,8 +33,9 @@ SIM_TIME = t_log(end);
 USE_OL = 1;
 u_sim_in = [t_log,u_log];
 r_sim_in = [t_log,r_log];
-simu = sim(mdl);
-simu.t = (0:1e-3:SIM_TIME)';
+sim(mdl)
+%%
+simu.t = (0:1e-3:SIM_TIME);
 %% Check reference tracking
 % figure;
 % stairs(t_log,r_log,'b'); hold on;
