@@ -107,46 +107,61 @@ void setup()
   //     return;
   // }
   // }
+  // uint32_t t;
+  // float u;
+  // float y;
+  // float r;
+  // float e;
+  // uint8_t ctrl;
+  // uint8_t state;
+  // mem.l.t = 0;
+  // mem.l.y = 0.0f;        //0x3FC00000
+  // mem.l.u = 0.0f;      //0x40480000
+  // mem.l.r = 0.0f;
+  // mem.l.e = 0.0f;
+  // mem.l.ctrl = 0x0A;     //0x0A
+  // mem.l.state = 0x0B;    //0x0B
+  // // float A[3] = {0,102.2342529296875f, 200.543212890625f};
+  // // uint8_t n = 3;
+  // for(uint32_t i = 0 ; i < 30; i++)
+  // {
+  //   // uint32_t idx = mem.get_idx();
+  //   // A[0] = (float)i;  
+  //   // mem.queue_line(A,n);
+  //   uint32_t idx = mem.get_idx();
+  //   // mem.l.cnt = (int32_t)i;
+  //   // mem.l.y   = (float)i;
+  //   // mem.l.u   = (float)(i+1);
+  //   // mem.l.t   = millis();
+  //   // mem.l.stat = 0x42;
+  //   // mem.l.ctrl = 0x43;
 
-  mem.l.y = 1.5f;        //0x3FC00000
-  mem.l.u = 3.125f;      //0x40480000
-  mem.l.t = 0xDEADBEEF;  //0xDEADBEEF
-  mem.l.cnt = 0;//0xF8000000
-  mem.l.ctrl = 0x0A;     //0x0A
-  mem.l.stat = 0x0B;    //0x0B
-  // float A[3] = {0,102.2342529296875f, 200.543212890625f};
-  // uint8_t n = 3;
-  for(uint32_t i = 0 ; i < 30; i++)
-  {
-    // uint32_t idx = mem.get_idx();
-    // A[0] = (float)i;  
-    // mem.queue_line(A,n);
-    uint32_t idx = mem.get_idx();
-    mem.l.cnt = (int32_t)i;
-    mem.l.y   = (float)i;
-    mem.l.u   = (float)(i+1);
-    mem.l.t   = millis();
-    mem.l.stat = 0x42;
-    mem.l.ctrl = 0x43;
-    uint32_t t1 = micros();
-    mem.queue_line_struct();
-    t1 = micros() - t1;
-    Serial.printf("------------------------------------------------------------\n");
-    Serial.printf("dt = %lu.i = %lu, head = %u, tail = %u\n",t1,i, mem.get_head(), mem.get_tail());
-    mem.display_buffer_interval(idx,mem.get_idx()-1);
-  }
-  Serial.printf("WHOLE BUFFER CONTENTS\n ->");
-  mem.display_buffer_interval(0,mem.get_idx()-1);
-  Serial.printf("<-\n");
-  Serial.printf("FIRST BLOCK OF BUFFER:\n->");
-  mem.display_buffer_interval(0,511);
-  Serial.printf("<-\n");
-  Serial.printf("Writing firs block to %s\n",write_file);
-  uint32_t t1 = micros();
-  uint32_t n_bytes = mem.write_block_to_file();
-  t1 = micros() - t1;
-  Serial.printf("Wrote %lu bytes to %s dt = %u, closing file %s\n",n_bytes, write_file, t1, write_file);
-  mem.close_file(1);
+  //   mem.l.t = millis();
+  //   mem.l.y = (float)i;        //0x3FC00000
+  //   mem.l.u = (float)(i+1);      //0x40480000
+  //   mem.l.r = (float)(i+2);
+  //   mem.l.e = (float)(i+3);
+  //   mem.l.ctrl = 0x0A;     //0x0A
+  //   mem.l.state = 0x0B;    //0x0B
+  //   uint32_t t1 = micros();
+  //   mem.queue_line_struct();
+  //   t1 = micros() - t1;
+  //   Serial.printf("------------------------------------------------------------\n");
+  //   Serial.printf("dt = %lu.i = %lu, head = %u, tail = %u\n",t1,i, mem.get_head(), mem.get_tail());
+  //   mem.display_buffer_interval(idx,mem.get_idx()-1);
+  // }
+  // Serial.printf("WHOLE BUFFER CONTENTS\n ->");
+  // mem.display_buffer_interval(0,mem.get_idx()-1);
+  // Serial.printf("<-\n");
+  // Serial.printf("FIRST BLOCK OF BUFFER:\n->");
+  // mem.display_buffer_interval(0,511);
+  // Serial.printf("<-\n");
+  // Serial.printf("Writing firs block to %s\n",write_file);
+  // uint32_t t1 = micros();
+  // uint32_t n_bytes = mem.write_block_to_file();
+  // t1 = micros() - t1;
+  // Serial.printf("Wrote %lu bytes to %s dt = %u, closing file %s\n",n_bytes, write_file, t1, write_file);
+  // mem.close_file(1);
   //  const uint8_t max_n = 20;
   // volatile float A[max_n]; // Prevent compiler optimizations
   // for (uint8_t i = 0; i < max_n; i++) {
@@ -206,8 +221,54 @@ void loop()
         cmd = b1;
       }  
     }
+    if(sta.cnt == N_SAMPLES)
+    {
+      cmd = STATE::CMD::END;
+      mem.close_file(1);
+    }
     sta.update(cmd);
-    
+    switch(sta.state)
+    {
+      case STATE::STATE::OFF:
+        mot.clear();  
+        ref = SQUARE_AMPLITUDE;
+        break;
+      case STATE::STATE::ON:
+        //ref = 2*M_PI;//2*M_PI*sin(2.0f*M_PI*SINE_FREQ*cnt_ms*1e-3);
+        if(sta.cnt < SQUARE_CNT_MAX)
+        {
+          ref = 0;
+        }else if(sta.cnt == SQUARE_CNT_MAX)
+        {
+          ref = SQUARE_AMPLITUDE;
+        }else if(sta.cnt % SQUARE_CNT_MAX == 0)
+        {
+          ref = -1*ref;
+        }
+        m = mot.read_position();
+        e = ref-m;
+        u = KP*e;
+        mot.write_voltage(u);
+        mem.l.t = micros();
+        mem.l.y = m;
+        mem.l.u = mot.read_voltage();
+        mem.l.r = ref;
+        mem.l.e = e;
+        mem.l.ctrl = 0x0A;    
+        mem.l.state = 0x0B;    
+        mem.queue_line_struct();
+        if(!mem.empty())
+        {
+          //uint32_t t1 = micros();
+          //uint32_t n_bytes = mem.write_block_to_file();
+          //t1 = micros() - t1;
+          //Serial.print("n_bytes = "); Serial.print(n_bytes); Serial.print("\t dt ="); Serial.print(t1); Serial.print("\t");
+          //Serial.print("head = "); Serial.print(mem.get_head()); Serial.print("\t tail = "); Serial.println(mem.get_tail());
+        }
+        break;
+      case STATE::STATE::TX_LOG:
+        break;
+  }
     /*
     if(state == STATE::ON)
     {

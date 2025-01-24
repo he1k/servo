@@ -23,6 +23,7 @@ class State
 {
   public:
     uint8_t state;
+    uint32_t cnt;
     State();
     void begin();
     void update(uint8_t cmd);

@@ -8,19 +8,13 @@
 struct logentry_t
 {
   const uint8_t start = 0x02;
-  //const uint8_t d1 = 0x20;
-  int32_t cnt;//float y;
-  //const uint8_t d2 = 0x20;
-  float u;
-  //const uint8_t d3 = 0x20;
   uint32_t t;
-  //const uint8_t d4 = 0x20;
-  float y;//int32_t cnt;
-  //const uint8_t d5 = 0x20;
+  float u;
+  float y;
+  float r;
+  float e;
   uint8_t ctrl;
-  //const uint8_t d6 = 0x20;
-  uint8_t stat;
-  //const uint8_t d7 = 0x20;
+  uint8_t state;
   const uint8_t end = 0x03;
 }__attribute__((aligned(4)));
 #pragma pack(pop)
