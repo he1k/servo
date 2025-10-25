@@ -1,0 +1,9 @@
+Manufacturer=Texas Instruments
+PartNumber=DRV8703QRHBRQ1
+PartCategory=Integrated Circuit
+PackageCategory=Quad Flat No-Lead
+PinCount=33
+Version=1.1
+Released=2020-01-09 13:45:30
+Downloaded=2025-10-24 20:35:53
+3D=Y

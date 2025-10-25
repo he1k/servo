@@ -1,0 +1,18 @@
+.DRV8703QRHBRQ1 :1 ;Automotive Brushed DC Gate Driver
+QFN50P500X500X90-33N-D
+*STM IC
+*NGS
+*PLB 1="GND_1" 2="IN1/PH" 3="IN2/EN" 4="SDO" 5="NSCS" 6="SDI" 7="SCLK" 8="NSLEEP" 9="NWDFLT" 10="NFAULT" 11="MODE" 12="DVDD" 13="GND_2" 14="AVDD" 15="VREF" 16="SO" 17="GND_3" 18="GH1" 19="SH1" 20="GL1" 21="SP" 22="SN" 23="SL2" 24="GL2" 25="SH2" 26="GH2" 27="VDRAIN" 28="VM" 29="VCP" 30="CPH" 31="CPL" 32="NC" 33="THERMAL PAD"
+*MXP 33
+*DFN DRV8703QRHBRQ1
+~!Manufacturer_Name (Texas Instruments)
+~!Manufacturer_Part_Number (DRV8703QRHBRQ1)
+~!Mouser Part Number (595-DRV8703QRHBRQ1)
+~!Link Mouser Price/Stock (https://www.mouser.co.uk/ProductDetail/Texas-Instruments/DRV8703QRHBRQ1?qs=%2FP2Ij7fVdhHVZvt8gQ%252BCWA%3D%3D)
+~!Arrow Part Number (DRV8703QRHBRQ1)
+~!Link Arrow Price/Stock (https://www.arrow.com/en/products/drv8703qrhbrq1/texas-instruments?region=nac)
+~!Link Datasheet (http://www.ti.com/lit/gpn/drv8703-q1)
+~!Height (0.9mm)
+~!3D_Model (DRV8703QRHBRQ1)
+DRV8703QRHBRQ1
+1.1!U 2.1!U 3.1!U 4.1!U 5.1!U 6.1!U 7.1!U 8.1!U 9.1!U 10.1!U 11.1!U 12.1!U 13.1!U 14.1!U 15.1!U 16.1!U 24.1!U 23.1!U 22.1!U 21.1!U 20.1!U 19.1!U 18.1!U 17.1!U 33.1!U 32.1!U 31.1!U 30.1!U 29.1!U 28.1!U 27.1!U 26.1!U 25.1!U 
