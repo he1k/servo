@@ -1933,7 +1933,7 @@
 			)
 		)
 		(property "Value" "INA253A2IPWR"
-			(at 6.35 13.97 0)
+			(at -7.112 24.384 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -1999,10 +1999,10 @@
 			)
 		)
 		(symbol "INA253A2IPWR_1_1"
-			(pin passive line
+			(pin input line
 				(at -10.16 2.54 0)
 				(length 2.54)
-				(name "IS-"
+				(name "IS_N"
 					(effects
 						(font
 							(size 1.27 1.27)
@@ -2161,10 +2161,10 @@
 					)
 				)
 			)
-			(pin passive line
+			(pin input line
 				(at -10.16 5.08 0)
 				(length 2.54)
-				(name "IS+"
+				(name "IS_P"
 					(effects
 						(font
 							(size 1.27 1.27)
@@ -2179,10 +2179,10 @@
 					)
 				)
 			)
-			(pin passive line
+			(pin input line
 				(at -3.81 15.24 270)
 				(length 2.54) hide
-				(name "IS+"
+				(name "IS_P"
 					(effects
 						(font
 							(size 1.27 1.27)
@@ -2197,10 +2197,10 @@
 					)
 				)
 			)
-			(pin passive line
+			(pin input line
 				(at 2.54 15.24 270)
 				(length 2.54) hide
-				(name "IS-"
+				(name "IS_N"
 					(effects
 						(font
 							(size 1.27 1.27)
@@ -2215,10 +2215,10 @@
 					)
 				)
 			)
-			(pin passive line
+			(pin input line
 				(at -1.27 15.24 270)
 				(length 2.54) hide
-				(name "IS+"
+				(name "IS_P"
 					(effects
 						(font
 							(size 1.27 1.27)
@@ -2233,10 +2233,10 @@
 					)
 				)
 			)
-			(pin passive line
+			(pin input line
 				(at 5.08 15.24 270)
 				(length 2.54) hide
-				(name "IS-"
+				(name "IS_N"
 					(effects
 						(font
 							(size 1.27 1.27)
