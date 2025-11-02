@@ -1,0 +1,22 @@
+Circuit: * C:\users\farfar\My Documents\servo\electronics\spice\tacho-amp.asc
+
+Direct Newton iteration for .op point succeeded.
+
+Date: Sun Nov 02 09:40:12 2025
+Total elapsed time: 15.824 seconds.
+
+tnom = 27
+temp = 27
+method = modified trap
+totiter = 689866
+traniter = 689855
+tranpoints = 157608
+accept = 118262
+rejected = 39346
+matrix size = 173
+fillins = 85
+solver = Normal
+Thread vector: 48.3/28.9[6] 19.4/8.5[6] 16.5/7.5[6] 1.0/3.0[1]  2592/500
+Matrix Compiler1: 9.05 KB object code size  8.0/4.4/[2.0]
+Matrix Compiler2: 12.49 KB object code size  4.3/6.2/[2.1]
+
